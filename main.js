@@ -60,6 +60,20 @@ let addDataToServer = async () => {
     }
 };
 
+let login = async () => {
+    let email = document.getElementById("email2").value;
+    let password = document.getElementById("password2").value;
+
+    try {
+        let userCredential = await auth.signInWithEmailAndPassword(email, password);
+        var user = userCredential.user;
+        console.log(user);
+        await stateChangeObserver();
+    } catch (error) {
+        console.log("Login error ", error.code);
+    }
+};
+
 let stateChangeObserver = async () => {
     auth.onAuthStateChanged(async (user) => {
         if (user) {
@@ -75,4 +89,33 @@ let stateChangeObserver = async () => {
             window.location.replace("./index.html");
         }
     });
+};
+
+let loadData = async () => {
+    console.log(auth.currentUser.email);
+
+    let email = auth.currentUser.email;
+    var docRef = db.collection("users").doc(email);
+    
+    try {
+        const doc = await docRef.get();
+        if (doc.exists) {
+            console.log("Document data:", doc.data());
+            
+            let name = doc.data().name;
+            let email = doc.data().email;
+            let dob = doc.data().dob;
+
+            document.getElementById("data").innerHTML = `
+                <div class="name" id="name3">Name: ${name}</div>
+                <div class="email" id="email3">Email: ${email}</div>
+                <div class="dob" id="dob3">DOB: ${dob}</div>
+            `;
+
+        } else {
+            console.log("No such document!");
+        }
+    } catch (error) {
+        console.log("Error getting document:", error);
+    }
 };
