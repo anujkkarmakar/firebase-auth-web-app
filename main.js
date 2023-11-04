@@ -10,46 +10,64 @@ const firebaseConfig = {
 
 const defaultProject = firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
+const db = firebase.firestore();
 
-let register = () => {
+let register = async () => {
     let email = document.getElementById("email").value;
     let password = document.getElementById("password").value;
 
-    auth.createUserWithEmailAndPassword(email, password)
-    .then((userCredential) => {
+    try {
+        let userCredential = await auth.createUserWithEmailAndPassword(email, password);
         var user = userCredential.user;
         console.log(user);
-        stateChangeObserver();
-    })
-    .catch((error) => {
+
+        // Wait for addDataToServer() to finish before continuing
+        await addDataToServer();
+        await stateChangeObserver();
+    } catch (error) {
         var errorCode = error.code;
         var errorMessage = error.message;
         console.log(errorCode);
         alert(errorMessage);
-    });
+    }
 };
 
-let signOut = () => {
-    auth.signOut().then(() => {
-        // Sign-out successful.
-        alert("Sign-out-successful");
-        stateChangeObserver();
-      }).catch((error) => {
-        // An error happened.
+let signOut = async () => {
+    try {
+        await auth.signOut();
+        await stateChangeObserver();
+    } catch (error) {
         alert("Sign out error");
         console.log(error.message);
         console.log(error.code);
-      });
+    }
 };
 
-let stateChangeObserver = () => {
-    auth.onAuthStateChanged((user) => {
+let addDataToServer = async () => {
+    let name = document.getElementById("name").value;
+    let email = document.getElementById("email").value;
+    let dob = document.getElementById("date-of-birth").value;
+
+    try {
+        await db.collection("users").doc(email).set({
+            name: name,
+            email: email,
+            dob: dob
+        });
+        console.log("Document successfully written!");
+    } catch (error) {
+        console.error("Error writing document: ", error);
+    }
+};
+
+let stateChangeObserver = async () => {
+    auth.onAuthStateChanged(async (user) => {
         if (user) {
             // user signed in. Take to different page the dashboard.html;
             var uid = user.uid;
             console.log(uid);
             console.log("Goto dashboard.html");
-            window.location.replace("./dashboard.html"); 
+            window.location.replace("./dashboard.html");
         } else {
             console.log("User sign out");
             // take the user back to index.html
